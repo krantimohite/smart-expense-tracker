@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { db, auth } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { categorizeExpense } from '@/lib/gemini';
 import { Plus, Sparkles, Loader2, Calendar, Tag, DollarSign, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -36,9 +35,20 @@ export default function ExpenseForm() {
   const handleAiCategorize = async () => {
     if (!notes || !amount) return;
     setAiLoading(true);
-    const category = await categorizeExpense(notes, amount);
-    setValue('category', category);
-    setAiLoading(false);
+    try {
+      const response = await fetch('/api/categorize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes, amount }),
+      });
+      const data = await response.json();
+      setValue('category', data.category || 'Others');
+    } catch (error) {
+      console.error('AI categorization failed:', error);
+      setValue('category', 'Others');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const onSubmit = async (data: ExpenseFormValues) => {
