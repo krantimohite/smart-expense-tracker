@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { db, auth } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { categorizeExpense } from '@/lib/gemini';
+// import { categorizeExpense } from '@/lib/gemini';
 import { Plus, Sparkles, Loader2, Calendar, Tag, DollarSign, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -33,13 +33,35 @@ export default function ExpenseForm() {
   const notes = watch('notes');
   const amount = watch('amount');
 
+  // const handleAiCategorize = async () => {
+  //   if (!notes || !amount) return;
+  //   setAiLoading(true);
+  //   const category = await categorizeExpense(notes, amount);
+  //   setValue('category', category);
+  //   setAiLoading(false);
+  // };
+  // ⚡ CHANGED: use server API instead of direct gemini call
   const handleAiCategorize = async () => {
     if (!notes || !amount) return;
     setAiLoading(true);
-    const category = await categorizeExpense(notes, amount);
-    setValue('category', category);
-    setAiLoading(false);
+
+    try {
+      const res = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes, amount }),
+      });
+
+      const data = await res.json();
+      setValue('category', data.category);
+    } catch (error) {
+      console.error("AI Categorization failed:", error);
+      setValue('category', 'Others');
+    } finally {
+      setAiLoading(false);
+    }
   };
+  // changes
 
   const onSubmit = async (data: ExpenseFormValues) => {
     if (!auth.currentUser) return;
