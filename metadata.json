@@ -1,0 +1,5 @@
+{
+  "name": "Smart Expense Tracker",
+  "description": "A modern web application to track daily expenses, categorize them using AI, manage budgets, and track loans with monthly EMI reminders.",
+  "requestFramePermissions": []
+}

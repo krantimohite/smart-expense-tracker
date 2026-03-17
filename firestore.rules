@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, email, displayName, photoURL, createdAt
+    //
+    // Collection: expenses
+    // Fields: userId, amount, category, date, notes, createdAt
+    //
+    // Collection: budgets
+    // Fields: userId, category, limit, month, createdAt
+    //
+    // Collection: loans
+    // Fields: userId, name, totalAmount, emiAmount, dueDate, remainingBalance, status, createdAt
+    //
+    // Collection: loanPayments
+    // Fields: userId, loanId, amount, date
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isNewDocOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validators
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email);
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll(['userId', 'amount', 'category', 'date']) &&
+             data.userId == request.auth.uid &&
+             data.amount is number && data.amount > 0 &&
+             data.category is string && data.category.size() > 0;
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['userId', 'category', 'limit', 'month']) &&
+             data.userId == request.auth.uid &&
+             data.limit is number && data.limit >= 0 &&
+             data.category is string && data.month is string;
+    }
+
+    function isValidLoan(data) {
+      return data.keys().hasAll(['userId', 'name', 'totalAmount', 'emiAmount', 'dueDate', 'remainingBalance', 'status']) &&
+             data.userId == request.auth.uid &&
+             data.totalAmount is number && data.emiAmount is number &&
+             data.dueDate is number && data.remainingBalance is number &&
+             data.status in ['active', 'completed'];
+    }
+
+    function isValidLoanPayment(data) {
+      return data.keys().hasAll(['userId', 'loanId', 'amount', 'date']) &&
+             data.userId == request.auth.uid &&
+             data.amount is number && data.amount > 0;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isDocOwner();
+      allow create: if isNewDocOwner() && isValidExpense(request.resource.data);
+      allow update: if isDocOwner() && isNewDocOwner() && isValidExpense(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /budgets/{budgetId} {
+      allow read: if isDocOwner();
+      allow create: if isNewDocOwner() && isValidBudget(request.resource.data);
+      allow update: if isDocOwner() && isNewDocOwner() && isValidBudget(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /loans/{loanId} {
+      allow read: if isDocOwner();
+      allow create: if isNewDocOwner() && isValidLoan(request.resource.data);
+      allow update: if isDocOwner() && isNewDocOwner() && isValidLoan(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /loanPayments/{paymentId} {
+      allow read: if isDocOwner();
+      allow create: if isNewDocOwner() && isValidLoanPayment(request.resource.data);
+      allow update: if isDocOwner() && isNewDocOwner() && isValidLoanPayment(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+  }
+}

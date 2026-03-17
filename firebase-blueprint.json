@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A single expense record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "category", "date"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Monthly budget for a category",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "limit": { "type": "number" },
+        "month": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "limit", "month"]
+    },
+    "Loan": {
+      "title": "Loan",
+      "description": "A loan record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "emiAmount": { "type": "number" },
+        "dueDate": { "type": "number" },
+        "remainingBalance": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "totalAmount", "emiAmount", "dueDate", "remainingBalance", "status"]
+    },
+    "LoanPayment": {
+      "title": "LoanPayment",
+      "description": "A payment record for a loan",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "loanId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "loanId", "amount", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Individual expense records"
+    },
+    "/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "Monthly budget limits"
+    },
+    "/loans/{loanId}": {
+      "schema": "Loan",
+      "description": "Loan records"
+    },
+    "/loanPayments/{paymentId}": {
+      "schema": "LoanPayment",
+      "description": "History of loan payments"
+    }
+  }
+}
